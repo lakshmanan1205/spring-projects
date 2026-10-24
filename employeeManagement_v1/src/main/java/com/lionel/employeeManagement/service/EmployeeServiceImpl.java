@@ -25,11 +25,7 @@ public class EmployeeServiceImpl implements  EmployeeService{
     @Override
     public Employee getEmployee(int id) {
         if(id<0){
-<<<<<<< HEAD
             throw new EmployeeValidationException("Enter valid employee ID");
-=======
-            throw new EmployeeNotFoundException("Employee Not found");
->>>>>>> fee99aefeb9d67d896493ac88569f6b0566700a5
         }
         Employee dbEmployee = employeeDao.getEmployee(id);
         if(dbEmployee == null){
@@ -45,10 +41,6 @@ public class EmployeeServiceImpl implements  EmployeeService{
         employee.setId(null);
         // VALIDATIONS
         isValidEmployeeObject(employee);
-<<<<<<< HEAD
-=======
-        System.out.println("Lakshmanan department "+employee.getDepartment());
->>>>>>> fee99aefeb9d67d896493ac88569f6b0566700a5
         Employee dbEmployee =  employeeDao.saveEmployee(employee);
         return dbEmployee;
     }
