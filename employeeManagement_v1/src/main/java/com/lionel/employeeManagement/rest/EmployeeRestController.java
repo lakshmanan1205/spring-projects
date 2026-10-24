@@ -1,20 +1,24 @@
 package com.lionel.employeeManagement.rest;
 
 import com.lionel.employeeManagement.entity.Employee;
-import com.lionel.employeeManagement.error.EmployeeNotFoundException;
+import com.lionel.employeeManagement.error.EmployeeValidationException;
 import com.lionel.employeeManagement.service.EmployeeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
 public class EmployeeRestController {
     private EmployeeService employeeService;
+    private JsonMapper jsonMapper;
 
     public EmployeeRestController(EmployeeService employeeService) {
         this.employeeService = employeeService;
+        this.jsonMapper = new JsonMapper();
     }
 
     @GetMapping("/hello")
@@ -39,12 +43,19 @@ public class EmployeeRestController {
     public Employee updateEmployee(@RequestBody Employee employee){
         return employeeService.updateEmployee(employee);
     }
+    @PatchMapping("employees/{employeeID}")
+    public Employee patchUpdateEmployee(@PathVariable int employeeID,@RequestBody Map<String,Object> patchPayload){
+        // VALIDATIONS
+        if(patchPayload.containsKey("id")){
+            throw new EmployeeValidationException("Id should not present in employee Object");
+        }
+        Employee tempEmployee = employeeService.getEmployee(employeeID);
+        Employee patchedEmployee = jsonMapper.updateValue(tempEmployee,patchPayload);
+        return employeeService.updateEmployee(patchedEmployee);
+    }
     @DeleteMapping("/employees/{employeeId}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable int employeeId){
         Employee dbEmployee = employeeService.getEmployee(employeeId);
-        if(employeeId<0 || dbEmployee==null){
-            throw new EmployeeNotFoundException("Employee ID Not Found");
-        }
         employeeService.deleteEmployee(dbEmployee);
         return ResponseEntity.noContent().build();
     }
