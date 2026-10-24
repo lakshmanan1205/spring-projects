@@ -1,6 +1,7 @@
 package com.lionel.employeeManagement.rest;
 
 import com.lionel.employeeManagement.entity.Employee;
+<<<<<<< HEAD
 import com.lionel.employeeManagement.error.EmployeeValidationException;
 import com.lionel.employeeManagement.service.EmployeeService;
 import org.springframework.http.ResponseEntity;
@@ -9,16 +10,30 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 import java.util.Map;
+=======
+import com.lionel.employeeManagement.error.EmployeeNotFoundException;
+import com.lionel.employeeManagement.service.EmployeeService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+>>>>>>> fee99aefeb9d67d896493ac88569f6b0566700a5
 
 @RestController
 @RequestMapping("/api")
 public class EmployeeRestController {
     private EmployeeService employeeService;
+<<<<<<< HEAD
     private JsonMapper jsonMapper;
 
     public EmployeeRestController(EmployeeService employeeService) {
         this.employeeService = employeeService;
         this.jsonMapper = new JsonMapper();
+=======
+
+    public EmployeeRestController(EmployeeService employeeService) {
+        this.employeeService = employeeService;
+>>>>>>> fee99aefeb9d67d896493ac88569f6b0566700a5
     }
 
     @GetMapping("/hello")
@@ -43,6 +58,7 @@ public class EmployeeRestController {
     public Employee updateEmployee(@RequestBody Employee employee){
         return employeeService.updateEmployee(employee);
     }
+<<<<<<< HEAD
     @PatchMapping("employees/{employeeID}")
     public Employee patchUpdateEmployee(@PathVariable int employeeID,@RequestBody Map<String,Object> patchPayload){
         // VALIDATIONS
@@ -56,6 +72,14 @@ public class EmployeeRestController {
     @DeleteMapping("/employees/{employeeId}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable int employeeId){
         Employee dbEmployee = employeeService.getEmployee(employeeId);
+=======
+    @DeleteMapping("/employees/{employeeId}")
+    public ResponseEntity<Void> deleteEmployee(@PathVariable int employeeId){
+        Employee dbEmployee = employeeService.getEmployee(employeeId);
+        if(employeeId<0 || dbEmployee==null){
+            throw new EmployeeNotFoundException("Employee ID Not Found");
+        }
+>>>>>>> fee99aefeb9d67d896493ac88569f6b0566700a5
         employeeService.deleteEmployee(dbEmployee);
         return ResponseEntity.noContent().build();
     }

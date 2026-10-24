@@ -3,11 +3,19 @@ package com.lionel.employeeManagement.dao;
 import com.lionel.employeeManagement.entity.Employee;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+<<<<<<< HEAD
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
+=======
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+>>>>>>> fee99aefeb9d67d896493ac88569f6b0566700a5
 public class EmployeeDaoImpl implements EmployeeDao{
     private EntityManager entityManager;
 
