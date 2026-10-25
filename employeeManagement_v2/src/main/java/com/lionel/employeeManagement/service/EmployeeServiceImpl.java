@@ -28,14 +28,7 @@ public class EmployeeServiceImpl implements EmployeeService{
 
     @Override
     public Employee findByID(int id) {
-        if(id <0){
-            throw new EmployeeValidationException("Enter Valid ID");
-        }
-        Optional<Employee> dbEmployee = employeeRepository.findById(id);
-        if(dbEmployee.isEmpty()){
-            throw new EmployeeNotFoundException();
-        }
-        return dbEmployee.get();
+        return employeeIDValidation(id);
     }
 
     @Override
@@ -56,27 +49,15 @@ public class EmployeeServiceImpl implements EmployeeService{
 
     @Override
     public Employee updatePartial(int id, Map<String, Object> patchPayload) {
-        if(id<0){
-            throw new EmployeeValidationException("Enter Valid Id");
-        }
-        Optional<Employee> dbEmployee = employeeRepository.findById(id);
-        if(dbEmployee.isEmpty()){
-            throw new EmployeeNotFoundException();
-        }
-        Employee patchedEmployee = jsonMapper.updateValue(dbEmployee.get(),patchPayload);
+        Employee dbEmployee = employeeIDValidation(id);
+        Employee patchedEmployee = jsonMapper.updateValue(dbEmployee,patchPayload);
         employeeValidations(patchedEmployee);
-        return patchedEmployee;
+        return  employeeRepository.save(patchedEmployee);
     }
 
     @Override
     public void deleteByID(int id) {
-        if(id <0){
-            throw new EmployeeValidationException("Enter Valid ID");
-        }
-        Optional<Employee> dbEmployee = employeeRepository.findById(id);
-        if(dbEmployee.isEmpty()){
-            throw new EmployeeNotFoundException();
-        }
+        Employee dbEmployee = employeeIDValidation(id);
         employeeRepository.deleteById(id);
     }
 
@@ -92,5 +73,15 @@ public class EmployeeServiceImpl implements EmployeeService{
         }else if(employee.getDepartment()==null){
             throw new EmployeeValidationException("Enter Valid Department");
         }
+    }
+    public Employee employeeIDValidation(int id){
+        if(id <= 0){
+            throw new EmployeeValidationException("Enter Valid ID");
+        }
+        Optional<Employee> dbEmployee = employeeRepository.findById(id);
+        if(dbEmployee.isEmpty()){
+            throw new EmployeeNotFoundException();
+        }
+        return dbEmployee.get();
     }
 }
