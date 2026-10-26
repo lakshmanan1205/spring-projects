@@ -144,10 +144,11 @@ Example JSON request body:
 
 ```json
 {
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john.doe@example.com",
-  "salary": 50000
+  "firstName": "sriram",
+  "lastName": "moorthy",
+  "email": "sriram@yopmail.com",
+  "department": "manager",
+  "salary":20000
 }
 ```
 
