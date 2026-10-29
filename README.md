@@ -47,11 +47,8 @@ The next iteration of the employee management application, exploring repository-
 
 **Planned features**
 - Spring Data REST
-- Field validation rules
-- Unit and integration tests
-- Swagger / OpenAPI documentation, subject to compatibility and successful integration
 
-**Status:** Planned / In Progress
+**Status:** Completed
 
 ### 4. Library Management
 
@@ -64,8 +61,11 @@ A library management application for practising core programming concepts and im
 - Classes, objects, and encapsulation
 - Collections and data handling
 - Application logic and CRUD-style operations
+- spring security
+- validations
+- test cases
 
-**Status:** Update according to the current implementation.
+**Status:** Planned / In Progress
 
 ### 5. E-Commerce Application
 

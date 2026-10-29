@@ -1,21 +1,48 @@
-# Maven
-target/
 
-# IntelliJ IDEA
-.idea/
-*.iml
-
-# Eclipse
-.classpath
-.project
-.settings/
-
-# Build output
-*.class
-
-# Logs
+# General
+HELP.md
 *.log
-
-# OS files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Maven build output - all projects
+**/target/
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven Wrapper
+# Keep .mvn/wrapper configuration and wrapper JAR tracked.
+# Do not ignore the entire .mvn directory.
+
+### Spring Tool Suite (STS) / Eclipse ###
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+### IntelliJ IDEA - all projects ###
+.idea/
+**/.idea/
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### Gradle build output ###
+**/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+**/.vscode/
