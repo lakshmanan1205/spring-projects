@@ -272,7 +272,7 @@ The database is designed using relational entities and mapping tables to maintai
 
 The database structure and relationships are documented in the following ERD:
 
-**ER Diagram:** [Add ERD Link Here]
+**ER Diagram:** https://github.com/lakshmanan1205/spring-projects/tree/feature_library_management/library-management-v1/library_management_ERD.png
 
 ---
 
