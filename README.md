@@ -1,18 +1,19 @@
 # Java & Spring Boot Projects
 
-A collection of Java and Spring Boot projects developed to strengthen my backend development skills, practise software engineering fundamentals, and explore different approaches to building applications.
+A collection of Java and Spring Boot projects developed to strengthen my backend development skills, practise software engineering fundamentals, and explore different approaches to building backend applications.
 
-The repository includes employee management projects with different data-access approaches, a library management application, and an e-commerce project.
+This repository includes three iterations of an employee management application, each using a different data-access approach, and a library management system built in two versions.
 
 ## Projects
 
 ### 1. Employee Management — V1
 
-**Focus:** Manual data access using JPA and EntityManager.
+**Focus:** Manual database access using JPA and EntityManager.
 
 An employee management REST API built using a layered architecture, with a custom DAO implementation to handle database operations.
 
-**Key concepts**
+**Key Concepts**
+
 - REST API development with Spring Boot
 - Controller–Service–DAO architecture
 - Manual database operations using JPA and EntityManager
@@ -21,80 +22,92 @@ An employee management REST API built using a layered architecture, with a custo
 
 **Status:** Completed
 
+**Source Code:** [Employee Management V1](https://github.com/lakshmanan1205/spring-projects/tree/master/employeeManagement_v1)
+
 ### 2. Employee Management — V2
 
-**Focus:** Simplifying data access with Spring Data JPA.
+**Focus:** Repository-based data access using Spring Data JPA.
 
-An improved version of the employee management application that replaces the manual DAO implementation with a Spring Data JPA repository.
+An improved version of the employee management application that replaces the manual DAO implementation with Spring Data JPA.
 
-**Key concepts**
+**Key Concepts**
+
 - `JpaRepository`
 - Repository-based data access
-- CRUD operations using Spring Data JPA
+- CRUD operations
 - Partial updates using PATCH
 - Service-layer business logic
 - Custom exception handling and validation
 
 **Status:** Completed
 
-**Source code:** [Employee Management V2](https://github.com/lakshmanan1205/spring-projects/tree/master/employeeManagement_v2)
+**Source Code:** [Employee Management V2](https://github.com/lakshmanan1205/spring-projects/tree/master/employeeManagement_v2)
 
 ### 3. Employee Management — V3
 
-**Focus:** Spring Data REST, validation, and automated testing.
+**Focus:** Exploring Spring Data REST.
 
-The next iteration of the employee management application, exploring repository-driven REST APIs and improving application reliability.
+An iteration of the employee management application that explores repository-driven REST API generation.
 
-**Planned features**
+**Key Concepts**
+
 - Spring Data REST
+- Repository-based REST endpoints
 
 **Status:** Completed
 
-### 4. Library Management
+**Source Code:** [Employee Management V3](https://github.com/lakshmanan1205/spring-projects/tree/master/employeeManagement_v3)
 
-**Focus:** Java fundamentals and application development.
+### 4. Library Management System — V1
 
-A library management application for practising core programming concepts and implementing common library operations.
+**Focus:** Building a real-world backend application using Spring Boot.
 
-**Key concepts**
-- Object-oriented programming
-- Classes, objects, and encapsulation
-- Collections and data handling
-- Application logic and CRUD-style operations
-- spring security
-- validations
-- test cases
+A library management application designed around practical library operations, including user management, role-based access control, book inventory, borrowing and returning workflows, and a prepaid wallet with rental-fee calculation.
 
-**Status:** Planned / In Progress
+**Key Concepts**
 
-### 5. E-Commerce Application
+- Layered architecture (Controller → Service → Repository → Entity)
+- Spring Data JPA and Hibernate with a 9-entity relational design
+- Spring Security with role-based authorization (4 roles)
+- DTO pattern to keep API contracts separate from persistence entities
+- Logging with Spring AOP
+- Transaction management using `@Transactional`
+- Business rule validation
+- Centralized exception handling
+- Unit and integration testing
+- API documentation with Swagger / OpenAPI
 
-**Focus:** Backend development for an e-commerce system.
+**Status:** In Progress
 
-A project intended to explore the design and implementation of common e-commerce functionality.
+**Source Code:** [Library Management V1](https://github.com/lakshmanan1205/spring-projects/tree/master/library-management-v1)
 
-**Potential features**
-- Product management
-- Category management
-- Customer management
-- Shopping cart
-- Order processing
-- Database persistence
-- REST API development
+### 5. Library Management System — V2
 
-**Status:** Planned / In Progress
+**Focus:** Production-style security on top of V1.
+
+The next iteration of the library management system, replacing basic authentication and hardcoded access rules with token-based security and database-driven permissions.
+
+**Planned Features**
+
+- JWT-based stateless authentication
+- Permission-based dynamic authorization managed through the database
+- Token lifecycle and session management
+- Payment gateway integration for wallet recharges (stretch goal)
+
+**Status:** Planned
 
 ## Technology Stack
 
 Technologies used across the repository, depending on the individual project:
 
 - **Language:** Java
-- **Framework:** Spring Boot
-- **Data access:** JPA, Hibernate, Spring Data JPA
+- **Framework:** Spring Boot, Spring AOP
+- **Data Access:** JPA, Hibernate, Spring Data JPA, Spring Data REST
 - **Database:** MySQL
-- **Build tool:** Maven
+- **Security:** Spring Security (JWT planned for Library Management V2)
+- **Build Tool:** Maven
 - **Testing:** JUnit 5, Spring Boot Test
-- **API documentation:** Swagger / OpenAPI (planned for V3)
+- **API Documentation:** Swagger / OpenAPI
 
 ## Repository Structure
 
@@ -102,24 +115,15 @@ Technologies used across the repository, depending on the individual project:
 spring-projects/
 │
 ├── employeeManagement_v1/
-│   └── Employee management with manual DAO
-│
 ├── employeeManagement_v2/
-│   └── Employee management with Spring Data JPA
-│
 ├── employeeManagement_v3/
-│   └── Employee management with Spring Data REST
-│
-├── libraryManagement/
-│   └── Library management application
-│
-├── e-commerce/
-│   └── E-commerce application
+├── libraryManagement_v1/
+├── libraryManagement_v2/
 │
 └── README.md
 ```
 
-> Directory names above are illustrative. Update them to match the actual folder names in the repository.
+Each project has its own directory and README containing its specific implementation details, features, setup instructions, and technical decisions.
 
 ## Learning Objectives
 
@@ -128,13 +132,16 @@ This repository reflects my ongoing journey toward becoming a Java backend devel
 My main learning objectives are:
 
 - Strengthen Java and object-oriented programming fundamentals.
-- Understand layered application architecture.
+- Understand layered application architecture and separation of concerns.
 - Build RESTful APIs using Spring Boot.
-- Compare manual DAO implementations with Spring Data JPA.
-- Explore automatic REST endpoint generation with Spring Data REST.
-- Implement validation and consistent exception handling.
+- Understand different approaches to database access.
+- Design relational databases and entity relationships.
+- Implement authentication and authorization using Spring Security, and later JWT.
+- Apply transaction management and business validations.
+- Use DTOs to decouple API contracts from persistence entities.
+- Apply AOP for cross-cutting concerns such as logging.
 - Write unit and integration tests.
-- Improve API documentation and code quality.
+- Improve API documentation, code quality, and maintainability.
 - Develop practical backend applications using relational databases.
 
 ## Getting Started
@@ -145,7 +152,7 @@ To run a project:
 
 1. Clone this repository.
 2. Open the required project directory in your IDE.
-3. Review the project's README, if available.
+3. Review the project's README for setup instructions.
 4. Configure the required database and application properties.
 5. Run the application using the Maven Wrapper or your IDE.
 
@@ -156,5 +163,4 @@ cd spring-projects
 
 ## Progress
 
-Projects are developed incrementally as I learn and apply new backend development concepts. Features and documentation may evolve as the applications improve.
-
+Projects are developed incrementally as I learn and apply new backend development concepts. Features, implementations, and documentation may evolve as the applications improve.
