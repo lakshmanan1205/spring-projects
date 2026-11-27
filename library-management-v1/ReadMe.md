@@ -1,12 +1,10 @@
-# Library Management System
+# Library Management System — V1
 
-## 1. INTRODUCTION
+## 1. Introduction
 
-The **Library Management System** is a Spring Boot-based application designed to manage the day-to-day operations of a library, including book management, borrowing, returning, user management, and wallet transactions.
+The **Library Management System** is a Spring Boot application that manages the day-to-day operations of a library, including book management, borrowing, returning, user management, and wallet transactions.
 
-The library generates income through non-refundable registration fees, wallet deposits, and book rental charges.
-
-The rental fee is calculated based on the book's price and the duration for which it is borrowed.
+The library generates income through non-refundable registration fees, wallet deposits, and book rental charges. The rental fee is calculated from the book's price and how long it is borrowed.
 
 ### Key Features
 
@@ -16,390 +14,383 @@ The rental fee is calculated based on the book's price and the duration for whic
 - Automatic rental fee calculation based on borrowing duration.
 - Wallet management and deposit history.
 - Role-based authentication and authorization.
+- DTO-based request and response models.
+- Logging with Spring AOP.
+
+### Version Scope
+
+| Capability                                             |       V1 (this version)       |               V2 (planned)                |
+| ------------------------------------------------------ | :---------------------------: | :---------------------------------------: |
+| Spring Data JPA and Hibernate                          |              ✅               |                    ✅                     |
+| Role-based authorization (4 roles)                     |              ✅               |                    ✅                     |
+| Authentication                                         | Basic (username and password) |              JWT (stateless)              |
+| Authorization rules                                    | Configured in Spring Security | Permission-based, managed in the database |
+| DTOs for API requests and responses                    |              ✅               |                    ✅                     |
+| Logging with Spring AOP                                |              ✅               |                    ✅                     |
+| Transaction management, validation, exception handling |              ✅               |                    ✅                     |
+| Unit and integration tests, Swagger / OpenAPI          |              ✅               |                    ✅                     |
+| Token and session management                           |              ❌               |                    ✅                     |
+| Payment gateway for wallet recharge                    |              ❌               |               Stretch goal                |
 
 ---
 
-## 2. RENTAL FEE CALCULATION
+## 2. Rental Fee Calculation
 
-Each book has an associated price, and the standard borrowing period is **14 days**.
-
-The rental fee is calculated as a percentage of the original book price.
+Each book has a price, and the standard borrowing period is **14 days**. The rental fee is a percentage of the original book price.
 
 ### Rental Fee Structure
 
-| Borrowing Duration | Rental Fee |
-|---|---:|
-| 1–14 days | 20% |
-| 15–21 days | 25% |
-| 22–28 days | 30% |
-| 29–35 days | 35% |
-| 36–42 days | 40% |
-| More than 42 days | 40% |
+| Borrowing Duration |   Rental Fee |
+| ------------------ | -----------: |
+| 1–14 days          |          20% |
+| 15–21 days         |          25% |
+| 22–28 days         |          30% |
+| 29–35 days         |          35% |
+| 36–42 days         |          40% |
+| More than 42 days  | 40% (capped) |
 
 ### Business Rules
 
 1. Every borrowed book must be returned within 14 days.
-2. A base rental fee of 20% of the book price is charged when returned within the due date.
+2. A base rental fee of 20% of the book price is charged when the book is returned within the due date.
 3. An additional 5% is charged for every subsequent overdue week.
 4. The maximum rental fee is capped at 40% of the book price.
-5. If a book is not returned within 42 days, the Admin will take the necessary action to recover it.
-6. No additional rental fee percentage will be charged beyond 40%.
+5. No additional percentage is charged beyond 40%.
+6. If a book is not returned within 42 days, the Admin takes the necessary action to recover it.
+
+### Calculation
+
+```text
+duration_days = (return_date - borrow_date) + 1      // the borrowing day counts as day 1
+weeks         = ceil(duration_days / 7)
+fee_percent   = min(20 + 5 * max(0, weeks - 2), 40)
+rental_fee    = book_price * fee_percent / 100
+```
+
+The fee depends on the total elapsed borrowing duration, not on calendar month boundaries.
 
 **Example:**
 
-If a user borrows a book on 1 May:
-
 - Borrowing date: 1 May
 - Due date: 14 May
-
-The rental fee is determined by the total elapsed borrowing duration, not by calendar month boundaries.
+- Returned on: 20 May, which is day 20, so 3 weeks and a 25% fee
+- For a book priced at ₹500, the rental fee is ₹125
 
 ---
 
-## 3. TYPES OF USERS
+## 3. Types of Users
 
 The library operates under the supervision of an Admin, who appoints Librarians to manage day-to-day operations.
 
-Users who want to borrow books must register as library members.
-
-There are two types of members:
+Users who want to borrow books must register as library members. There are two types of members:
 
 1. **Member:** Regular library members, including students.
 2. **Faculty:** Faculty members whose membership category is verified during registration.
 
-The system supports four roles:
-
-- MEMBER
-- FACULTY
-- LIBRARIAN
-- ADMIN
+The system supports four roles: `MEMBER`, `FACULTY`, `LIBRARIAN`, and `ADMIN`.
 
 ---
 
-## 4. BOOK BORROWING LIMITS
+## 4. Book Borrowing Limits
 
 The maximum number of books a user can borrow at a time depends on their role.
 
-| Role | Maximum Borrowing Limit |
-|---|---:|
-| Member | 3 |
-| Faculty | 10 |
-| Librarian | 10 |
-| Admin | 10 |
+| Role      | Maximum Borrowing Limit |
+| --------- | ----------------------: |
+| Member    |                       3 |
+| Faculty   |                      10 |
+| Librarian |                      10 |
+| Admin     |                      10 |
 
 The application validates the borrowing limit before creating a new borrowing record.
 
 ---
 
-## 5. WALLET AND CASH FLOW MANAGEMENT
+## 5. Wallet and Cash Flow Management
 
 All financial transactions within the library are handled through an internal wallet system.
 
 ### Registration Charges
 
-Every new user must pay the following amounts during registration:
-
-| Description | Amount |
-|---|---:|
-| Non-refundable Registration Fee | ₹200 |
-| Minimum Initial Wallet Deposit | ₹300 |
-| **Total Initial Payment** | **₹500** |
+| Description                     |   Amount |
+| ------------------------------- | -------: |
+| Non-refundable Registration Fee |     ₹200 |
+| Minimum Initial Wallet Deposit  |     ₹300 |
+| **Total Initial Payment**       | **₹500** |
 
 ### Wallet Rules
 
-1. Every new user must pay a non-refundable registration fee of ₹200.
-2. Every new user must deposit a minimum of ₹300 into their wallet.
-3. Registration fees and initial wallet deposits are maintained as separate transactions in the `DEPOSITS` table.
-4. Users can recharge their wallets through a Librarian.
+1. Every new user pays a non-refundable registration fee of ₹200.
+2. Every new user deposits a minimum of ₹300 into their wallet.
+3. The registration fee and the initial wallet deposit are stored as separate transactions in the `DEPOSITS` table.
+4. Users recharge their wallets through a Librarian.
 5. The minimum amount for subsequent wallet recharges is ₹100.
 6. All amounts credited to the wallet are non-refundable.
 7. Rental fees are deducted directly from the user's wallet when a book return is processed.
-8. A book return cannot be completed if the user's wallet balance is insufficient to cover the rental fee.
+8. A book return cannot be completed if the wallet balance is insufficient to cover the rental fee.
 
 ### Deposit Records Example
 
-For a new user registration:
+For a new user registration, two separate records are stored in `DEPOSITS`:
 
 | Transaction Type | Amount |
-|---|---:|
-| REGISTRATION_FEE | ₹200 |
-| WALLET_RECHARGE | ₹300 |
-
-Both transactions are stored as separate records in the `DEPOSITS` table.
+| ---------------- | -----: |
+| REGISTRATION_FEE |   ₹200 |
+| WALLET_RECHARGE  |   ₹300 |
 
 ### Financial Tracking
 
-- **DEPOSITS:** Maintains the history of registration fees and wallet deposits received from users.
-- **BORROWINGS:** Maintains borrowing and return history, including rental fees charged to users.
-- **USERS:** Maintains the current wallet balance of each user.
+- **DEPOSITS:** history of registration fees and wallet deposits received from users.
+- **BORROWINGS:** borrowing and return history, including rental fees charged.
+- **USERS:** current wallet balance of each user.
 
 ---
 
-## 6. ROLES AND RESPONSIBILITIES
+## 6. Roles and Responsibilities
 
-| Role | Responsibilities |
-|---|---|
-| Admin | Manages users and oversees library operations. |
-| Librarian | Manages books, authors, physical book copies, returns, and wallet deposits. |
-| Member | Borrows and returns books through the Librarian. |
-| Faculty | Borrows and returns books through the Librarian with an increased borrowing limit. |
+| Role      | Responsibilities                                                                    |
+| --------- | ----------------------------------------------------------------------------------- |
+| Admin     | Manages users and oversees library operations.                                      |
+| Librarian | Manages books, authors, physical book copies, returns, and wallet deposits.         |
+| Member    | Borrows and returns books through the Librarian.                                    |
+| Faculty   | Borrows and returns books through the Librarian, with an increased borrowing limit. |
 
-Members and Faculty users share the same basic library operations but have different borrowing limits.
+Members and Faculty share the same basic library operations but have different borrowing limits.
 
 ---
 
-## 7. BUSINESS RULES
+## 7. Business Rules
 
-### ADMIN
+### Admin
 
-1. An Admin cannot delete a user until all their dependencies are cleared.
-2. For example, a user cannot be deleted while they still have unreturned books.
-3. At least one active Admin must always exist in the system.
-4. The Admin is responsible for recovering books that remain unreturned beyond 42 days.
+1. An Admin cannot delete a user until all of the user's dependencies are cleared. For example, a user cannot be deleted while they still have unreturned books.
+2. At least one active Admin must always exist in the system.
+3. The Admin is responsible for recovering books that remain unreturned beyond 42 days.
 
-### LIBRARIAN
+### Librarian
 
-1. A Librarian cannot remove a book copy while it is currently borrowed and has not been returned.
+1. A Librarian cannot remove a book copy while it is currently borrowed and not yet returned.
 2. A Librarian verifies the physical condition of a returned book and completes the return process in the application.
 3. A Librarian handles wallet recharge requests and records the corresponding deposit transactions.
 4. At least one active Librarian must always exist in the system.
 
-### MEMBERS / FACULTY
+### Members and Faculty
 
 1. Only active and valid members can borrow books.
 2. Users cannot exceed their borrowing limits.
 3. Users must have sufficient wallet balance to pay the rental fee when returning a book.
-4. If the wallet balance is insufficient, users must recharge their wallets before completing the return transaction.
+4. If the wallet balance is insufficient, the user must recharge their wallet before the return can be completed.
 
-### BOOK BORROWING AND RETURN PROCESS
-
-**Borrowing Process:**
+### Borrowing Process
 
 1. The member requests a book.
 2. The Librarian verifies the member's eligibility and borrowing limit.
 3. The Librarian checks the availability of physical book copies.
 4. The Librarian issues an available book copy and creates the borrowing record.
 
-**Return Process:**
+### Return Process
 
-1. The member physically hands over the borrowed book to the Librarian.
+1. The member physically hands the borrowed book to the Librarian.
 2. The Librarian verifies the returned book and its physical condition.
-3. The Librarian initiates the return process through the application.
-4. The application calculates the rental fee based on the borrowing duration.
+3. The Librarian initiates the return through the application.
+4. The application calculates the rental fee from the borrowing duration.
 5. The rental fee is deducted from the user's wallet.
 6. The borrowing record is updated.
 7. The physical book copy becomes available for borrowing again.
 
 ---
 
-## 8. PERMISSIONS AND ACCESS CONTROL
+## 8. Permissions and Access Control
 
-The system supports four roles: MEMBER, FACULTY, LIBRARIAN, and ADMIN.
-
-| Operation | MEMBER | FACULTY | LIBRARIAN | ADMIN |
-|---|:---:|:---:|:---:|:---:|
-| View Books | ❌ | ❌ | ✅ | ✅ |
-| Search Books | ✅ | ✅ | ✅ | ✅ |
-| View Book Details | ❌ | ❌ | ✅ | ✅ |
-| View Book Copies | ✅ | ✅ | ✅ | ✅ |
-| Borrow Books | ❌ | ❌ | ✅ | ✅ |
-| Return Books | ❌ | ❌ | ✅ | ✅ |
-| Add Books | ❌ | ❌ | ✅ | ✅ |
-| Update Books | ❌ | ❌ | ✅ | ✅ |
-| Delete Books | ❌ | ❌ | ✅ | ✅ |
-| Recharge Wallet | ❌ | ❌ | ✅ | ✅ |
-| Manage Users | ❌ | ❌ | ❌ | ✅ |
-
-Additional implementation requirements:
-
-- Implement field-level validations.
-- Handle application exceptions appropriately.
-- Write unit and integration test cases.
-- Integrate Swagger/OpenAPI for API documentation.
+| Operation         | MEMBER | FACULTY | LIBRARIAN | ADMIN |
+| ----------------- | :----: | :-----: | :-------: | :---: |
+| View Books        |   ❌   |   ❌    |    ✅     |  ✅   |
+| Search Books      |   ✅   |   ✅    |    ✅     |  ✅   |
+| View Book Details |   ❌   |   ❌    |    ✅     |  ✅   |
+| View Book Copies  |   ✅   |   ✅    |    ✅     |  ✅   |
+| Borrow Books      |   ❌   |   ❌    |    ✅     |  ✅   |
+| Return Books      |   ❌   |   ❌    |    ✅     |  ✅   |
+| Add Books         |   ❌   |   ❌    |    ✅     |  ✅   |
+| Update Books      |   ❌   |   ❌    |    ✅     |  ✅   |
+| Delete Books      |   ❌   |   ❌    |    ✅     |  ✅   |
+| Recharge Wallet   |   ❌   |   ❌    |    ✅     |  ✅   |
+| Manage Users      |   ❌   |   ❌    |    ❌     |  ✅   |
 
 ---
 
-## 9. APPLICATION ARCHITECTURE
+## 9. Application Architecture
 
-The application follows a layered architecture to separate responsibilities and maintain code organization.
+The application follows a layered architecture to separate responsibilities.
 
 ### Technology and Design
 
-1. **Spring Data JPA:** Used for entity management and database operations.
-2. **Spring Security:** Used to implement authentication and role-based authorization.
-3. **Layered Architecture:** Follows the Controller → Service → DAO/Repository → Entity flow.
-4. **Transaction Management:** Uses `@Transactional` for operations involving multiple entities or database tables within a single API request.
-5. **Validation:** Implements appropriate field-level and business-level validations.
-6. **Exception Handling:** Provides centralized exception handling.
-7. **Testing:** Includes unit and integration tests.
+1. **Spring Data JPA and Hibernate:** entity management and database operations.
+2. **Spring Security:** authentication and role-based authorization.
+3. **Layered Architecture:** Controller → Service → Repository → Entity.
+4. **DTOs:** request and response models keep the API contract separate from persistence entities, so internal fields (such as password hashes) are never exposed.
+5. **Transaction Management:** `@Transactional` for operations that touch multiple entities or tables within a single API request.
+6. **Logging with Spring AOP:** an aspect handles cross-cutting logging (method entry and exit, execution time, and exceptions) without cluttering business code. Sensitive data such as passwords is never logged.
+7. **Validation:** field-level and business-level validation.
+8. **Exception Handling:** centralized handling with consistent error responses.
+9. **Testing:** unit and integration tests.
+10. **API Documentation:** Swagger / OpenAPI.
 
 ---
 
-## 10. DATABASE DESIGN
+## 10. Database Design
 
-The database is designed using relational entities and mapping tables to maintain relationships between different entities.
+The database uses relational entities and mapping tables to maintain relationships.
 
 ### Main Entities
 
-| Entity | Purpose |
-|---|---|
-| USERS | Stores all user information. |
-| ROLES | Maintains the available roles in the application. |
-| USER_ROLES | Maps users to roles and maintains role assignments. |
-| BOOKS | Stores book information. |
-| AUTHORS | Stores author information. |
+| Entity       | Purpose                                                            |
+| ------------ | ------------------------------------------------------------------ |
+| USERS        | Stores all user information.                                       |
+| ROLES        | Maintains the available roles in the application.                  |
+| USER_ROLES   | Maps users to roles and maintains role assignments.                |
+| BOOKS        | Stores book information.                                           |
+| AUTHORS      | Stores author information.                                         |
 | BOOK_AUTHORS | Maintains the many-to-many relationship between books and authors. |
-| BOOK_COPIES | Maintains individual physical copies of each book. |
-| DEPOSITS | Maintains user registration fee and wallet deposit history. |
-| BORROWINGS | Maintains book borrowing and return history. |
+| BOOK_COPIES  | Maintains individual physical copies of each book.                 |
+| DEPOSITS     | Maintains user registration fee and wallet deposit history.        |
+| BORROWINGS   | Maintains book borrowing and return history.                       |
 
-### Database Design Decisions
+### Design Decisions
 
-1. **Users and Roles:** `USERS` and `ROLES` are maintained as separate entities. `USER_ROLES` acts as the mapping entity between them.
-2. **Books and Authors:** Books and Authors are maintained as separate entities, with `BOOK_AUTHORS` handling their many-to-many relationship.
-3. **Book Copies:** `BOOK_COPIES` maintains individual physical copies of each book. Users borrow a physical book copy rather than an entire book title.
-4. **Deposits:** The `DEPOSITS` table maintains the history of registration fees and wallet deposits made by users.
-5. **User Types:** MEMBER, FACULTY, LIBRARIAN, and ADMIN share the same `USERS` table to avoid unnecessary entity duplication.
-6. **Borrowings:** The `BORROWINGS` table maintains borrowing and return history, including rental fee details.
+1. **Users and Roles:** kept as separate entities, with `USER_ROLES` as the mapping entity between them.
+2. **Books and Authors:** kept as separate entities, with `BOOK_AUTHORS` handling the many-to-many relationship.
+3. **Book Copies:** users borrow a physical copy rather than a book title, so each copy has its own availability.
+4. **Deposits:** a separate history table for registration fees and wallet recharges.
+5. **User Types:** MEMBER, FACULTY, LIBRARIAN, and ADMIN share the same `USERS` table to avoid entity duplication.
+6. **Borrowings:** stores borrowing and return history, including rental fee details.
 
-### Financial Tracking
+### Entity Relationship Diagram
 
-- The `DEPOSITS` table helps track the total amount collected through registration fees and wallet deposits.
-- The `BORROWINGS` table helps track rental fees charged to users and their borrowing history.
-- The wallet balance maintains the available prepaid credit of each user.
-
-### Entity Relationship Diagram (ERD)
-
-The database structure and relationships are documented in the following ERD:
-
-**ER Diagram:** https://github.com/lakshmanan1205/spring-projects/tree/feature_library_management/library-management-v1/library_management_ERD.png
+![Library Management ERD](library_management_ERD.png)
 
 ---
 
-## 11. API ENDPOINTS
+## 11. API Endpoints
 
-The following endpoints define the planned API structure and access permissions.
+Authentication in V1 uses username and password. Endpoints are grouped by access level.
 
-### AUTHENTICATION (PUBLIC)
+### Authentication (Public)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/auth/register-faculty` | Register as a Faculty user. |
-| POST | `/api/auth/register-member` | Register as a Member. |
-| POST | `/api/auth/login` | Authenticate a user. |
+| Method | Endpoint                     | Description                 |
+| ------ | ---------------------------- | --------------------------- |
+| POST   | `/api/auth/register-member`  | Register as a Member.       |
+| POST   | `/api/auth/register-faculty` | Register as a Faculty user. |
+| POST   | `/api/auth/login`            | Authenticate a user.        |
 
-### USERS (ADMIN)
+### Users, Roles, and User Roles (Admin)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/users` | Retrieve all users. |
-| GET | `/api/users/{id}` | Retrieve a user by ID. |
-| POST | `/api/users` | Create a user. |
-| PUT | `/api/users/{id}` | Update user information. |
-| DELETE | `/api/users/{id}` | Delete a user. |
+| Method           | Endpoint               | Description                                        |
+| ---------------- | ---------------------- | -------------------------------------------------- |
+| GET              | `/api/users`           | Retrieve all users.                                |
+| GET              | `/api/users/{id}`      | Retrieve a user by ID.                             |
+| POST             | `/api/users`           | Create a user.                                     |
+| PUT              | `/api/users/{id}`      | Update user information.                           |
+| DELETE           | `/api/users/{id}`      | Delete a user.                                     |
+| GET, POST        | `/api/roles`           | Retrieve all roles, or create a role.              |
+| GET, PUT, DELETE | `/api/roles/{id}`      | Retrieve, update, or delete a role.                |
+| GET, POST        | `/api/user_roles`      | Retrieve all user-role assignments, or create one. |
+| GET, PUT, DELETE | `/api/user_roles/{id}` | Retrieve, update, or delete an assignment.         |
 
-### ROLES (ADMIN)
+### Books, Authors, and Book Authors
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/roles` | Retrieve all roles. |
-| GET | `/api/roles/{id}` | Retrieve a role by ID. |
-| POST | `/api/roles` | Create a role. |
-| PUT | `/api/roles/{id}` | Update a role. |
-| DELETE | `/api/roles/{id}` | Delete a role. |
+| Method           | Endpoint                       | Access           | Description                                       |
+| ---------------- | ------------------------------ | ---------------- | ------------------------------------------------- |
+| GET              | `/api/books`                   | Librarian, Admin | Retrieve all books.                               |
+| GET              | `/api/books/{id}`              | Librarian, Admin | Retrieve a book by ID.                            |
+| POST             | `/api/books`                   | Librarian, Admin | Add a new book.                                   |
+| PUT              | `/api/books/{id}`              | Librarian, Admin | Update book information.                          |
+| DELETE           | `/api/books/{id}`              | Librarian, Admin | Delete a book.                                    |
+| GET              | `/api/books/search?title=java` | All users        | Search books by title.                            |
+| GET, POST        | `/api/authors`                 | Librarian, Admin | Retrieve all authors, or create an author.        |
+| GET, PUT, DELETE | `/api/authors/{id}`            | Librarian, Admin | Retrieve, update, or delete an author.            |
+| GET, POST        | `/api/book_authors`            | Librarian, Admin | Retrieve all book-author mappings, or create one. |
+| GET, PUT, DELETE | `/api/book_authors/{id}`       | Librarian, Admin | Retrieve, update, or delete a mapping.            |
 
-### USER_ROLES (ADMIN)
+### Book Copies
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/user_roles` | Retrieve all user-role assignments. |
-| GET | `/api/user_roles/{id}` | Retrieve an assignment by ID. |
-| POST | `/api/user_roles` | Create a user-role assignment. |
-| PUT | `/api/user_roles/{id}` | Update an assignment. |
-| DELETE | `/api/user_roles/{id}` | Delete an assignment. |
+| Method | Endpoint                | Access           | Description                   |
+| ------ | ----------------------- | ---------------- | ----------------------------- |
+| GET    | `/api/book_copies`      | All users        | Retrieve book copies.         |
+| GET    | `/api/book_copies/{id}` | All users        | Retrieve a book copy by ID.   |
+| POST   | `/api/book_copies`      | Librarian, Admin | Add a physical book copy.     |
+| PUT    | `/api/book_copies/{id}` | Librarian, Admin | Update book copy information. |
+| DELETE | `/api/book_copies/{id}` | Librarian, Admin | Delete a book copy.           |
 
-### BOOKS
+### Borrowings (Librarian, Admin)
 
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| GET | `/api/books` | Librarian | Retrieve all books. |
-| GET | `/api/books/{id}` | Librarian | Retrieve a book by ID. |
-| POST | `/api/books` | Librarian | Add a new book. |
-| PUT | `/api/books/{id}` | Librarian | Update book information. |
-| DELETE | `/api/books/{id}` | Librarian | Delete a book. |
-| GET | `/api/books/search?title=java` | Users | Search books by title. |
+| Method | Endpoint                      | Description                  |
+| ------ | ----------------------------- | ---------------------------- |
+| POST   | `/api/borrowings`             | Create a borrowing record.   |
+| GET    | `/api/borrowings/{id}`        | Retrieve a borrowing record. |
+| POST   | `/api/borrowings/{id}/return` | Process a book return.       |
+| GET    | `/api/borrowings/active`      | Retrieve active borrowings.  |
+| GET    | `/api/borrowings/overdue`     | Retrieve overdue borrowings. |
 
-### AUTHORS (LIBRARIAN)
+### Deposits and Wallet (Librarian, Admin)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/authors` | Retrieve all authors. |
-| GET | `/api/authors/{id}` | Retrieve an author by ID. |
-| POST | `/api/authors` | Create an author. |
-| PUT | `/api/authors/{id}` | Update an author. |
-| DELETE | `/api/authors/{id}` | Delete an author. |
+| Method | Endpoint        | Description                                       |
+| ------ | --------------- | ------------------------------------------------- |
+| POST   | `/api/deposits` | Record a wallet recharge or registration payment. |
+| GET    | `/api/deposits` | Retrieve deposit history.                         |
 
-### BOOK_AUTHORS (LIBRARIAN)
+### Current User (Authenticated Users)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/book_authors` | Retrieve all book-author mappings. |
-| GET | `/api/book_authors/{id}` | Retrieve a mapping by ID. |
-| POST | `/api/book_authors` | Create a book-author mapping. |
-| PUT | `/api/book_authors/{id}` | Update a mapping. |
-| DELETE | `/api/book_authors/{id}` | Delete a mapping. |
-
-### BOOK_COPIES
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| GET | `/api/book_copies` | Users | Retrieve book copies. |
-| GET | `/api/book_copies/{id}` | Users | Retrieve a book copy by ID. |
-| POST | `/api/book_copies` | Librarian | Add a physical book copy. |
-| PUT | `/api/book_copies/{id}` | Librarian | Update book copy information. |
-| DELETE | `/api/book_copies/{id}` | Librarian | Delete a book copy. |
-
-### BORROWINGS (LIBRARIAN)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/borrowings` | Create a borrowing record. |
-| GET | `/api/borrowings/{id}` | Retrieve a borrowing record. |
-| POST | `/api/borrowings/{id}/return` | Process a book return. |
-| GET | `/api/borrowings/active` | Retrieve active borrowings. |
-| GET | `/api/borrowings/overdue` | Retrieve overdue borrowings. |
-
-### CURRENT USER (AUTHENTICATED USERS)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/me` | Retrieve the currently authenticated user's information. |
-| GET | `/api/me/borrowings` | Retrieve the currently authenticated user's borrowing history. |
+| Method | Endpoint             | Description                                          |
+| ------ | -------------------- | ---------------------------------------------------- |
+| GET    | `/api/me`            | Retrieve the authenticated user's information.       |
+| GET    | `/api/me/borrowings` | Retrieve the authenticated user's borrowing history. |
 
 ---
 
-## 12. FUTURE ENHANCEMENTS – VERSION 2
+## 12. Setup
+
+1. Install a JDK (see `pom.xml` for the required version) and MySQL.
+2. Create a MySQL database for the application.
+3. Set the database URL, username, and password in `application.properties`.
+4. Run the application:
+
+```bash
+./mvnw spring-boot:run
+```
+
+5. Open the API documentation at `http://localhost:8080/swagger-ui/index.html` (default Swagger UI path).
+
+To run the tests:
+
+```bash
+./mvnw test
+```
+
+---
+
+## 13. Roadmap — Version 2
 
 The following improvements are planned for the next version.
 
-1. **DTO Implementation:** Currently, the APIs expose entity data directly. Introduce Data Transfer Objects (DTOs) to control the data exposed through API requests and responses.
-2. **Dynamic Authorization:** Currently, authorization rules are configured using hardcoded Spring Security configuration. Introduce a permission-based database design to manage permissions dynamically without modifying application configuration for every permission change.
-3. **JWT Authentication:** Implement JWT-based authentication to support stateless authentication instead of repeatedly sending username and password credentials with every API request.
-4. **Session and Token Management:** Introduce appropriate authentication and token lifecycle management.
+1. **JWT Authentication:** stateless authentication, replacing username and password credentials on every request.
+2. **Dynamic Authorization:** V1 configures authorization rules in Spring Security. V2 introduces a permission-based database design so permissions can change without modifying application configuration.
+3. **Session and Token Management:** token lifecycle handling, such as expiry and refresh.
+4. **Payment Gateway (stretch goal):** online payment for registration and wallet recharges.
 
 ---
 
-## 13. PROJECT GOALS
+## 14. Project Goals
 
-This project is intended to demonstrate practical implementation of:
+This project demonstrates practical implementation of:
 
 - Java and Spring Boot.
 - Spring Data JPA and Hibernate.
 - Spring Security and authentication.
-- Role-based and permission-based authorization.
-- REST API development.
+- Role-based authorization.
+- REST API development with DTOs.
 - Relational database design and entity relationships.
 - Transaction management.
+- Logging with Spring AOP.
 - Input validation and exception handling.
 - Unit and integration testing.
-- API documentation using Swagger/OpenAPI.
+- API documentation using Swagger / OpenAPI.
